@@ -1,6 +1,6 @@
 # 🔗 URL Shortener — MERN Stack
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live%20Link-brightgreen?style=for-the-badge&logo=vercel)](YOUR_DEPLOYED_FRONTEND_URL_HERE)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20Link-brightgreen?style=for-the-badge&logo=vercel)]((https://frontend-elb7.onrender.com))
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
 [![React Version](https://img.shields.io/badge/react-%5E19.0.0-cyan.svg?style=for-the-badge&logo=react)](https://react.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
@@ -12,9 +12,7 @@ A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. 
 ## 🚀 Live Deployment Links
 
 You can access the deployed application here:
-
-*   **Frontend (UI):** [Live Demo URL](YOUR_DEPLOYED_FRONTEND_URL_HERE) _(e.g., Vercel, Netlify)_
-*   **Backend (API):** [API Server URL](YOUR_DEPLOYED_BACKEND_URL_HERE) _(e.g., Render, Railway, Heroku)_
+https://frontend-elb7.onrender.com
 
 ---
 
