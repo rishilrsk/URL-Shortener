@@ -1,29 +1,29 @@
 /* ──────────────────────────────────────────
    Fonts
 ────────────────────────────────────────── */
-@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap');
 
 /* ──────────────────────────────────────────
    Design Tokens
 ────────────────────────────────────────── */
 :root {
   /* Colors */
-  --clr-bg: #0c0e14;
-  --clr-bg-card: #12151e;
-  --clr-bg-card2: #171b27;
-  --clr-border: rgba(255, 255, 255, 0.08);
-  --clr-border-hover: rgba(255, 255, 255, 0.16);
+  --clr-bg:          #0c0e14;
+  --clr-bg-card:     #12151e;
+  --clr-bg-card2:    #171b27;
+  --clr-border:      rgba(255,255,255,0.08);
+  --clr-border-hover:rgba(255,255,255,0.16);
 
-  --clr-accent: #6c63ff;
-  --clr-accent-2: #a78bfa;
-  --clr-accent-glow: rgba(108, 99, 255, 0.25);
+  --clr-accent:      #6c63ff;
+  --clr-accent-2:    #a78bfa;
+  --clr-accent-glow: rgba(108,99,255,0.25);
 
-  --clr-success: #34d399;
-  --clr-success-bg: rgba(52, 211, 153, 0.12);
+  --clr-success:     #34d399;
+  --clr-success-bg:  rgba(52,211,153,0.12);
 
-  --clr-text-primary: #f0f0f8;
+  --clr-text-primary:   #f0f0f8;
   --clr-text-secondary: #9294a8;
-  --clr-text-muted: #5a5c6e;
+  --clr-text-muted:     #5a5c6e;
 
   /* Spacing */
   --sp-1: 4px;
@@ -45,12 +45,12 @@
   --r-full: 9999px;
 
   /* Shadows */
-  --shadow-card: 0 0 0 1px var(--clr-border), 0 8px 40px rgba(0, 0, 0, 0.4);
-  --shadow-btn: 0 4px 20px rgba(108, 99, 255, 0.35);
+  --shadow-card: 0 0 0 1px var(--clr-border), 0 8px 40px rgba(0,0,0,0.4);
+  --shadow-btn:  0 4px 20px rgba(108,99,255,0.35);
 
   /* Typography */
-  --font-display: "Syne", sans-serif;
-  --font-body: "DM Sans", sans-serif;
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
 
   /* Transitions */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -60,9 +60,7 @@
 /* ──────────────────────────────────────────
    Reset & Base
 ────────────────────────────────────────── */
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -81,12 +79,10 @@ body {
   font-size: 16px;
   line-height: 1.6;
   min-height: 100dvh;
+  overflow-x: hidden;
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
+a { text-decoration: none; color: inherit; }
 
 /* ──────────────────────────────────────────
    Layout
@@ -108,10 +104,6 @@ a {
   gap: var(--sp-6);
   position: relative;
   z-index: 1;
-  /* Keep the content readable on very large screens */
-  width: 100%;
-  max-width: 980px;
-  margin: 0 auto;
 }
 
 /* ──────────────────────────────────────────
@@ -152,6 +144,9 @@ a {
   text-align: center;
   padding-bottom: var(--sp-2);
   animation: fadeUp 0.6s var(--ease) both;
+  width: 100%;
+  padding-left: var(--sp-4);
+  padding-right: var(--sp-4);
 }
 
 .hero-title {
@@ -163,11 +158,16 @@ a {
   font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: -0.03em;
+  width: 100%;
 }
 
 .hero-word {
   display: block;
-  font-size: clamp(4.5rem, 14vw, 9rem);
+  /* Scale with viewport: "Shortener" (9 chars) needs ~10.5% of vw per char.
+     Min keeps it readable; max caps it on large screens.
+     9.5vw × 9 chars ≈ 85.5vw — safely within viewport with padding. */
+  font-size: clamp(2rem, 9vw, 8.5rem);
+  white-space: nowrap;
 }
 
 .hero-word-plain {
@@ -176,11 +176,7 @@ a {
 }
 
 .hero-word-accent {
-  background: linear-gradient(
-    135deg,
-    var(--clr-accent) 0%,
-    var(--clr-accent-2) 100%
-  );
+  background: linear-gradient(135deg, var(--clr-accent) 0%, var(--clr-accent-2) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -192,8 +188,7 @@ a {
 ────────────────────────────────────────── */
 .card {
   width: 100%;
-  /* Slightly narrower cards for a neater centered layout */
-  max-width: 680px;
+  max-width: 640px;
   background: var(--clr-bg-card);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-card);
@@ -201,12 +196,8 @@ a {
   animation: fadeUp 0.6s var(--ease) both;
 }
 
-.input-card {
-  animation-delay: 0.1s;
-}
-.result-card {
-  animation-delay: 0.05s;
-}
+.input-card { animation-delay: 0.1s; }
+.result-card { animation-delay: 0.05s; }
 
 /* ──────────────────────────────────────────
    Input Section
@@ -256,9 +247,7 @@ a {
   font-family: var(--font-body);
   font-size: 15px;
   outline: none;
-  transition:
-    border-color var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
 .url-input::placeholder {
@@ -295,16 +284,13 @@ a {
   gap: var(--sp-2);
   white-space: nowrap;
   box-shadow: var(--shadow-btn);
-  transition:
-    opacity var(--dur) var(--ease),
-    transform var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
   letter-spacing: 0.01em;
 }
 
 .shorten-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(108, 99, 255, 0.45);
+  box-shadow: 0 6px 28px rgba(108,99,255,0.45);
 }
 
 .shorten-btn:active:not(:disabled) {
@@ -320,16 +306,14 @@ a {
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255,255,255,0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 /* ──────────────────────────────────────────
@@ -347,7 +331,7 @@ a {
   font-weight: 600;
   color: var(--clr-success);
   background: var(--clr-success-bg);
-  border: 1px solid rgba(52, 211, 153, 0.2);
+  border: 1px solid rgba(52,211,153,0.2);
   border-radius: var(--r-full);
   padding: 4px 12px;
   text-transform: uppercase;
@@ -386,8 +370,8 @@ a {
   flex-shrink: 0;
   height: 40px;
   padding: 0 var(--sp-5);
-  background: rgba(108, 99, 255, 0.12);
-  border: 1.5px solid rgba(108, 99, 255, 0.3);
+  background: rgba(108,99,255,0.12);
+  border: 1.5px solid rgba(108,99,255,0.3);
   border-radius: var(--r-sm);
   color: var(--clr-accent-2);
   font-family: var(--font-body);
@@ -397,23 +381,19 @@ a {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  transition:
-    background var(--dur) var(--ease),
-    color var(--dur) var(--ease),
-    border-color var(--dur) var(--ease),
-    transform var(--dur) var(--ease);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
   white-space: nowrap;
 }
 
 .copy-btn:hover {
-  background: rgba(108, 99, 255, 0.22);
-  border-color: rgba(108, 99, 255, 0.5);
+  background: rgba(108,99,255,0.22);
+  border-color: rgba(108,99,255,0.5);
   transform: translateY(-1px);
 }
 
 .copy-btn.copied {
   background: var(--clr-success-bg);
-  border-color: rgba(52, 211, 153, 0.35);
+  border-color: rgba(52,211,153,0.35);
   color: var(--clr-success);
 }
 
@@ -445,9 +425,7 @@ a {
   background: #fff;
   border-radius: var(--r-md);
   padding: var(--sp-5);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.3);
 }
 
 .download-btn {
@@ -464,16 +442,12 @@ a {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    background var(--dur) var(--ease),
-    color var(--dur) var(--ease),
-    border-color var(--dur) var(--ease),
-    transform var(--dur) var(--ease);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .download-btn:hover {
   background: var(--clr-bg-card2);
-  border-color: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255,255,255,0.22);
   color: var(--clr-text-primary);
   transform: translateY(-1px);
 }
@@ -495,7 +469,7 @@ a {
   gap: var(--sp-2);
   font-size: 13px;
   color: var(--clr-text-muted);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255,255,255,0.03);
   border: 1px solid var(--clr-border);
   border-radius: var(--r-full);
   padding: 7px 16px;
@@ -508,7 +482,7 @@ a {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgba(108, 99, 255, 0.18);
+  background: rgba(108,99,255,0.18);
   color: var(--clr-accent-2);
   font-size: 11px;
   font-weight: 700;
@@ -552,17 +526,13 @@ a {
   border-radius: var(--r-sm);
   padding: 6px 12px;
   border: 1px solid transparent;
-  transition:
-    color var(--dur) var(--ease),
-    border-color var(--dur) var(--ease),
-    background var(--dur) var(--ease),
-    transform var(--dur) var(--ease);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .footer-link:hover {
   color: var(--clr-text-primary);
   border-color: var(--clr-border-hover);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255,255,255,0.04);
   transform: translateY(-1px);
 }
 
@@ -631,9 +601,11 @@ a {
 }
 
 @media (max-width: 400px) {
-  .hero-title {
-    font-size: 2rem;
-  }
+  .hero-word { font-size: clamp(1.8rem, 8.5vw, 3rem); }
+}
+
+@media (max-width: 320px) {
+  .hero-word { font-size: 7.5vw; }
 }
 
 /* ──────────────────────────────────────────
