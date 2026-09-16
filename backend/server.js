@@ -5,6 +5,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import urlRoutes from "./routes/url.js";
+import authRoutes from "./routes/auth.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use(
 );
 app.use(express.json());
 
+app.use("/api/auth", authRoutes);
 app.use("/", urlRoutes);
 
 mongoose
