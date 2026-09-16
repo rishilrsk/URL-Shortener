@@ -11,10 +11,12 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [qrImage, setQrImage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleShorten = async () => {
     if (!url || loading) return;
     setLoading(true);
+    setError("");
 
     try {
       const res = await axios.post(`${API_BASE_URL}/shorten`, {
@@ -29,7 +31,11 @@ function App() {
       setQrImage(qr);
     } catch (err) {
       console.log(err);
-      alert("Something went wrong");
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -55,6 +61,28 @@ function App() {
             <span className="hero-word hero-word-accent">Shortener</span>
           </h1>
         </header>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="error-banner" role="alert" style={{
+            backgroundColor: "#fee2e2",
+            color: "#991b1b",
+            padding: "12px 16px",
+            borderRadius: "8px",
+            marginBottom: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            border: "1px solid #f87171"
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span style={{ fontWeight: "500", fontSize: "0.95rem" }}>{error}</span>
+          </div>
+        )}
 
         {/* Input Card */}
         <section className="card input-card" aria-label="URL shortener form">

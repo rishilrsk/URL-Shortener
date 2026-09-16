@@ -12,9 +12,10 @@ A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. 
 ## 🚀 Live Deployment Links
 
 ⚡ Access the live environment below:
-
- Render - 🌐 [frontend-elb7.onrender.com](https://frontend-elb7.onrender.com) |
-
+| Layer | Platform | URL |
+| :--- | :--- | :--- |
+| **Frontend UI** | Render | 🌐 [frontend-elb7.onrender.com](https://frontend-elb7.onrender.com) |
+| **Backend API** | Render | ⚙️ *Your Deployed Backend API URL* |
 
 ---
 

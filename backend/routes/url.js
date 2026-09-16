@@ -8,28 +8,71 @@ router.post("/shorten", async (req, res) => {
   try {
     const { originalUrl } = req.body;
 
-    if (!originalUrl) {
-      return res.status(400).json({ error: "URL is required" });
+    let finalUrl = originalUrl?.trim();
+
+    if (!finalUrl) {
+      return res.status(400).json({ error: "Please enter a URL to shorten." });
+    }
+
+    if (!/^https?:\/\//i.test(finalUrl)) {
+      finalUrl = 'https://' + finalUrl;
     }
 
     try {
-      new URL(originalUrl);
+      const parsedUrl = new URL(finalUrl);
+      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+        return res.status(400).json({ error: "Please provide a valid link starting with http:// or https://" });
+      }
+      const hostnameParts = parsedUrl.hostname.split('.');
+      const tld = hostnameParts[hostnameParts.length - 1];
+      if (parsedUrl.hostname !== 'localhost' && (!parsedUrl.hostname.includes('.') || !/^[a-zA-Z]{2,}$/.test(tld))) {
+        return res.status(400).json({ error: "That doesn't look like a valid link. Please include a valid domain (like .com or .in)" });
+      }
     } catch {
-      return res.status(400).json({ error: "Invalid URL" });
+      return res.status(400).json({ error: "That doesn't look like a valid link. Please include http:// or https://" });
     }
 
-    let shortId;
-    let exists = true;
-
-    while (exists) {
-      shortId = nanoid(7);
-      exists = await Url.findOne({ shortId });
+    const baseUrl = process.env.BASE_URL;
+    const deployedUrl = process.env.deployed_backend_url?.trim();
+    
+    if ((baseUrl && finalUrl.startsWith(baseUrl)) || 
+        (deployedUrl && finalUrl.startsWith(deployedUrl))) {
+      return res.status(400).json({ error: "This URL is already shortened and cannot be shortened further." });
     }
 
-    const url = await Url.create({
-      shortId,
-      originalUrl,
-    });
+    const existingUrl = await Url.findOne({ originalUrl: finalUrl });
+    if (existingUrl) {
+      return res.json({
+        shortId: existingUrl.shortId,
+        shortUrl: `${process.env.BASE_URL}/${existingUrl.shortId}`,
+      });
+    }
+
+    let url;
+    let saved = false;
+    let attempts = 0;
+
+    while (!saved && attempts < 5) {
+      try {
+        const shortId = nanoid(7);
+        url = await Url.create({
+          shortId,
+          originalUrl: finalUrl,
+        });
+        saved = true;
+      } catch (err) {
+        // 11000 is MongoDB's duplicate key error code
+        if (err.code === 11000) {
+          attempts++;
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    if (!saved) {
+      return res.status(500).json({ error: "Server is busy. Please try again." });
+    }
 
     res.json({
       shortId: url.shortId,
@@ -37,7 +80,7 @@ router.post("/shorten", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Something went wrong on our server. Please try again later." });
   }
 });
 
@@ -54,7 +97,7 @@ router.get("/:shortId", async (req, res) => {
     return res.redirect(url.originalUrl);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Something went wrong on our server. Please try again later." });
   }
 });
 
