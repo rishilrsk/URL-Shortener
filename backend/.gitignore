@@ -1,2 +1,4 @@
 /node_modules
 .env
+test-email.js
+test-signup.js

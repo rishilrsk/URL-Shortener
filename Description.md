@@ -210,7 +210,10 @@ It is flat and highly optimized for read-heavy operations. The `shortId` is mark
     *   `500 Internal Server Error`: "Server error"
 
 ## 9. Authentication & Authorization
-* `Not found in codebase` - This application is entirely public and does not require user accounts.
+*   **JWT (JSON Web Tokens):** Used for stateless authentication. Upon successful login, the server issues a JWT which the client stores in `localStorage`.
+*   **OTP (One-Time Password) via Email:** Implemented a robust 2-step verification system. Users must verify their email with a 6-digit OTP before they can log in.
+*   **Brevo SMTP:** Used as the transactional email service to reliably deliver OTPs without getting flagged as spam.
+*   **Bcrypt:** Passwords are never stored in plaintext. They are salted and hashed using `bcrypt` before being saved to MongoDB.
 
 ## 10. Frontend Page-by-Page Description
 
@@ -263,6 +266,12 @@ It is flat and highly optimized for read-heavy operations. The `shortId` is mark
 
 ### Database Space Optimization
 * **14-Day TTL Index:** A Time-To-Live index on `createdAt` automatically deletes URL records after 14 days. This ensures the database never fills up with dead links and keeps the active ID space clean. 
+
+### OTP Generation and Verification Flow
+1. **Generation:** When a user signs up, a random 6-digit number is generated using `Math.floor(100000 + Math.random() * 900000)`.
+2. **Storage:** This OTP is saved to the user's MongoDB document along with an `otpExpires` timestamp (current time + 4 minutes).
+3. **Delivery:** The backend uses `nodemailer` and Brevo SMTP to email the code wrapped in a branded HTML template.
+4. **Verification:** When the user submits the code, the server checks if the code matches AND if `new Date()` is less than `otpExpires`. If valid, `isVerified` is set to `true`, and the OTP fields are cleared from the database for security.
 
 ## 13. Code Walkthrough
 
@@ -342,6 +351,16 @@ It is flat and highly optimized for read-heavy operations. The `shortId` is mark
 ### F. Frontend
 **Question:** How is the QR code generated and downloaded?
 **Model Answer:** I use two libraries to handle this gracefully. I use `react-qr-code` to render the SVG visually on the screen for the user. For the download functionality, I use `qrcode` (`toDataURL` method) to generate a base64 encoded PNG data URI in the background when the URL is shortened. I pass that data URI to the `href` of an anchor tag with the `download` attribute, allowing the user to save it as an image file natively.
+
+### G. Authentication & OTP
+**Question:** How did you implement authentication and why did you use OTPs?
+**Model Answer:** I implemented authentication using JWTs (JSON Web Tokens) for stateless session management and bcrypt for password hashing. I added an OTP (One-Time Password) verification step via email to ensure that only valid users can register and use the service. When a user signs up, they receive a 6-digit code via Brevo SMTP that expires in 4 minutes. They cannot log in until `isVerified` becomes true in the database.
+
+**Question:** Why did you use Brevo instead of just using Gmail for sending OTPs?
+**Model Answer:** While Gmail is fine for local testing, it is not designed for transactional emails and strictly rate-limits or blocks automated SMTP requests, flagging them as spam. I chose Brevo because it is a dedicated transactional email service. By configuring a proper SMTP relay, the emails land directly in the user's inbox reliably, which is crucial for time-sensitive OTPs.
+
+**Question:** How do you handle password resets securely?
+**Model Answer:** If a user forgets their password, they request a reset. The server generates a new 4-minute OTP and emails it to them. The user must provide their email, the correct OTP, and their new password. The server validates the OTP and its expiration time before hashing the new password with bcrypt and saving it. Crucially, after a successful reset or verification, I explicitly set `user.otp = undefined` to clear the code from the database so it can't be reused.
 
 ## 20. "Defend Your Project"
 
