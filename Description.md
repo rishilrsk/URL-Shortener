@@ -169,6 +169,17 @@ Browser navigates to original URL
 | `createdAt` | Date | No | Auto | - | Timestamp (from `timestamps: true`) |
 | `updatedAt` | Date | No | Auto | - | Timestamp (from `timestamps: true`) |
 
+### `User` Model
+
+| Field | Type | Required | Constraints | Description |
+| ----- | ---- | -------- | ----------- | ----------- |
+| `name` | String | Yes | `default: "User"` | The display name of the user |
+| `email` | String | Yes | `unique: true` | User's email address |
+| `password`| String | Yes | Hashed | Bcrypt hashed password |
+| `isVerified`| Boolean| No | `default: false`| Whether the user verified their OTP |
+| `otp` | String | No | - | Temporary 6-digit code for verification/reset |
+| `otpExpires`| Date | No | - | Expiration timestamp for the OTP |
+
 **Why this schema?**
 It is flat and highly optimized for read-heavy operations. The `shortId` is marked as `unique: true` to enforce integrity at the database level. `clicks` serves as a simple metric tracker.
 
@@ -217,6 +228,12 @@ It is flat and highly optimized for read-heavy operations. The `shortId` is mark
 
 ## 10. Frontend Page-by-Page Description
 
+### Authentication Pages
+*   **Sign Up (`/signup`):** Collects name, email, and password. Submits to the backend, which sends a 6-digit OTP via Brevo to the user's email.
+*   **Verify OTP (`/verify`):** A secure input form that requires the 6-digit code. Validates against the backend before marking the user as `isVerified: true`.
+*   **Login (`/login`):** Authenticates the user and receives a JWT token, storing it in `localStorage` alongside the user's email and name. Also contains a "Forgot Password" modal to initiate password resets.
+*   **Reset Password (`/reset-password`):** Allows users to enter an OTP sent to their email along with a new password to recover their account.
+
 ### Main Landing Page (Single Page Application)
 *   **Route:** `/`
 *   **Purpose:** Submit URLs, view results, copy link, and download QR code.
@@ -238,7 +255,9 @@ It is flat and highly optimized for read-heavy operations. The `shortId` is mark
     *   Clicks "Copy" -> writes to clipboard, temporarily sets `copied=true`.
 
 ## 11. Component Architecture
-*   `Not heavily componentized.` The entire UI is built within a single `App.jsx` file to keep the project lightweight. The design is heavily driven by Tailwind CSS classes (`bg-orb`, `card`, `hero-title`) rather than deep React component trees.
+*   **React Router:** The app is structured as a Single Page Application (SPA) using `react-router-dom`. `App.jsx` serves as the layout wrapper containing a global `Navbar`.
+*   **Global State (Context API):** An `AuthContext` provides the `user` state (token and email) to the entire application, enabling conditional rendering (e.g., showing a "Logout" button instead of "Login" when authenticated).
+*   **Page Components:** The logic is separated into dedicated pages: `Home.jsx`, `Login.jsx`, `Signup.jsx`, and `VerifyOTP.jsx`.
 
 ## 12. Core Business Logic
 
@@ -424,7 +443,8 @@ UI UPDATE: Shows result card to user
 | File | Why It Matters | What I Should Know Before Interview |
 | :--- | :--- | :--- |
 | ⭐ `backend/routes/url.js` | Contains the core business logic (generation, collision check, redirect). | Understand the `while(exists)` loop and how `res.redirect()` works. |
-| ⭐ `frontend/src/App.jsx` | The entire frontend logic. | Know how the Axios POST request is made, state is handled, and how clipboard copying works. |
+| ⭐ `backend/routes/auth.js` | Handles user registration, JWT generation, and OTP validation. | Know how bcrypt hashes passwords and how Brevo sends the HTML emails. |
+| ⭐ `frontend/src/context/AuthContext.jsx` | Global state manager for authentication. | Explain how it reads the JWT from `localStorage` on initial load. |
 | `backend/models/Url.js` | Defines the database schema. | Know the fields: `originalUrl`, `shortId`, and `clicks`. Note `unique: true`. |
 
 ## 26. Interview Preparation Priority
@@ -459,10 +479,11 @@ UI UPDATE: Shows result card to user
 
 ### Most Important Features
 1. Instant ID generation using `nanoid`.
-2. Real-time click analytics.
-3. Client-side QR code generation and download.
+2. Secure OTP-based Email Verification (Brevo SMTP) and JWT Authentication.
+3. Real-time click analytics and Client-side QR code generation.
 
 ### Most Important APIs
+*   `POST /api/auth/signup` & `/api/auth/verify`: Handles user creation and 6-digit OTP email validation.
 *   `POST /shorten`: Takes `originalUrl`, returns `shortId` and `shortUrl`.
 *   `GET /:shortId`: Looks up URL, increments clicks, issues 302 redirect.
 

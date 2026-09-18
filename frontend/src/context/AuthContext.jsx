@@ -13,19 +13,21 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const savedEmail = localStorage.getItem('userEmail');
+      const savedName = localStorage.getItem('userName');
       if (savedEmail) {
-        setUser({ email: savedEmail });
+        setUser({ email: savedEmail, name: savedName });
       }
     } else {
       delete axios.defaults.headers.common['Authorization'];
     }
   }, [token]);
 
-  const login = (newToken, email) => {
+  const login = (newToken, email, name) => {
     setToken(newToken);
-    setUser({ email });
+    setUser({ email, name });
     localStorage.setItem('token', newToken);
     localStorage.setItem('userEmail', email);
+    if (name) localStorage.setItem('userName', name);
   };
 
   const logout = () => {
@@ -33,6 +35,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
   };
 
   return (

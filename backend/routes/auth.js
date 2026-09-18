@@ -11,10 +11,10 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 // Signup Route
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: "Name, email, and password are required" });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -29,6 +29,7 @@ router.post("/signup", async (req, res) => {
     const otpExpires = new Date(Date.now() + 4 * 60 * 1000); // 4 minutes
 
     const user = await User.create({
+      name,
       email: email.toLowerCase(),
       password: hashedPassword,
       otp,
@@ -109,7 +110,7 @@ router.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ token, userId: user._id, email: user.email });
+    res.json({ token, userId: user._id, email: user.email, name: user.name });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error during login" });
@@ -126,8 +127,7 @@ router.post("/forgot-password", async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      // Return success even if user doesn't exist for security reasons
-      return res.json({ message: "If an account with that email exists, we sent an OTP to reset your password." });
+      return res.status(404).json({ error: "Email not registered with us" });
     }
 
     const otp = generateOTP();

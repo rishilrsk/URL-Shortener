@@ -14,7 +14,7 @@ export default function Navbar() {
         <div className="navbar-links">
           {user ? (
             <>
-              <span className="navbar-user">{user.email}</span>
+              <span className="navbar-user">{user.name || user.email}</span>
               <button onClick={logout} className="download-btn" style={{ height: '36px', padding: '0 16px' }}>Logout</button>
             </>
           ) : (
