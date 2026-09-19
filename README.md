@@ -198,4 +198,4 @@ To build the React application for production deployment:
 
 *   **Rishi**
     *   GitHub: [@rishilrsk](https://github.com/rishilrsk)
-    *   LinkedIn: [rishisivakesh](https://www.linkedin.com/in/rishisivakesh/]
+    *   LinkedIn: [rishisivakesh](https://www.linkedin.com/in/rishisivakesh/)
