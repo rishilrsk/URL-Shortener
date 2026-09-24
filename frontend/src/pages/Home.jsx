@@ -2,10 +2,12 @@ import { useState } from "react";
 import axios from "axios";
 import { QRCode } from "react-qr-code";
 import QRCodeGenerator from "qrcode";
+import { useAuth } from "../context/AuthContext";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL?.trim();
 
 export default function Home() {
+  const { user } = useAuth();
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [copied, setCopied] = useState(false);
@@ -14,6 +16,13 @@ export default function Home() {
   const [error, setError] = useState("");
 
   const handleShorten = async () => {
+    if (!user) {
+      const guestCount = parseInt(localStorage.getItem("guestCount") || "0", 10);
+      if (guestCount >= 2) {
+        setError("You've used your 2 free links! Please log in to continue.");
+        return;
+      }
+    }
     if (!url || loading) return;
     setLoading(true);
     setError("");
@@ -22,6 +31,11 @@ export default function Home() {
       const res = await axios.post(`${API_BASE_URL}/shorten`, {
         originalUrl: url,
       });
+
+      if (!user) {
+        const guestCount = parseInt(localStorage.getItem("guestCount") || "0", 10);
+        localStorage.setItem("guestCount", (guestCount + 1).toString());
+      }
 
       const newShortUrl = res.data.shortUrl;
       setShortUrl(newShortUrl);
