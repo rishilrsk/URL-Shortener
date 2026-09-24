@@ -8,8 +8,7 @@ export default function Navbar() {
     <nav className="navbar" aria-label="Main Navigation">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          <span className="hero-word-accent" style={{ fontSize: '1.25rem', letterSpacing: '0' }}>URL</span> 
-          <span style={{ fontWeight: 600, color: 'var(--clr-text-primary)' }}>Shortener</span>
+          <img src="/URL-Shortener-logo.png" alt="Logo" style={{ height: 'clamp(32px, 6vw, 44px)', width: 'auto', objectFit: 'contain' }} />
         </Link>
         <div className="navbar-links">
           {user ? (
