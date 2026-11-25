@@ -5,7 +5,7 @@
 [![React Version](https://img.shields.io/badge/react-%5E19.0.0-cyan.svg?style=for-the-badge&logo=react)](https://react.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. Built using a sleek glassmorphic UI, it allows users to instantly shorten long URLs, download generated QR codes, copy links with a single click, and track click counts in real-time.
+A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. It has a clean, responsive interface that works on phones, tablets and desktops, and it allows users to instantly shorten long URLs, download generated QR codes, copy links with a single click, and track click counts in real-time.
 
 ---
 
@@ -15,7 +15,7 @@ A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. 
 | Layer | Platform | URL |
 | :--- | :--- | :--- |
 | **Frontend UI** | Render | 🌐 [frontend-elb7.onrender.com](https://frontend-elb7.onrender.com) |
-| **Backend API** | Render | ⚙️ *Your Deployed Backend API URL* |
+| **Backend API** | Render | ⚙️ [backend-7kq8.onrender.com](https://backend-7kq8.onrender.com/health) |
 
 ---
 
@@ -26,7 +26,7 @@ A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. 
 *   **QR Code Download:** Directly download the generated QR code as a PNG file for offline sharing.
 *   **One-Click Copy:** Convenient copy button with instant interactive visual feedback ("Copied!").
 *   **Click Analytics:** Dynamically increments and tracks click counts every time the short link is visited.
-*   **Premium Glassmorphic Design:** A stunning dark-mode interface featuring CSS gradients, glowing blurred orbs, interactive responsive cards, and micro-animations.
+*   **Clean, responsive design:** Works from 320px phones to wide desktops, follows the device's light or dark mode, and is keyboard and screen-reader friendly.
 *   **Input Validation:** Validates URLs on both the frontend and backend to prevent broken redirects.
 *   **Safe ID Generation:** Uses cryptographically secure `nanoid` (7 characters) to generate unique short IDs.
 
@@ -37,8 +37,7 @@ A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. 
 ### Frontend
 *   **React 19** – Modern library for building user interfaces.
 *   **Vite** – Super fast frontend build tool.
-*   **Tailwind CSS v4** – Utility-first CSS framework for modern layouts.
-*   **DaisyUI v5** – Sleek component library built on top of Tailwind.
+*   **Plain CSS** with design tokens (`src/index.css`) and shared UI components (`src/components/ui.jsx`).
 *   **Axios** – Promise-based HTTP client for API requests.
 *   **react-qr-code** & **qrcode** – QR code rendering and downloading.
 
@@ -115,6 +114,16 @@ cd URL-Shortener
    PORT=5000
    BASE_URL=http://localhost:5000
    FRONTEND_URL=http://localhost:5173
+
+   # Auth (required): a long random string
+   JWT_SECRET=change-me-to-a-long-random-string
+
+   # Email (Brevo SMTP) for verification and password-reset codes
+   SMTP_HOST=smtp-relay.brevo.com
+   SMTP_PORT=587
+   SMTP_USER=your-brevo-login-email@example.com
+   SMTP_PASS=your-brevo-smtp-key
+   EMAIL_FROM=no-reply@yourdomain.com
    ```
 5. Start the backend development server (with nodemon auto-restart):
    ```bash
@@ -158,7 +167,8 @@ cd URL-Shortener
       "originalUrl": "https://www.google.com/search?q=mern+stack+url+shortener"
     }
     ```
-*   **Success Response (200 OK):**
+*   **Auth:** Optional. Guests (no `Authorization: Bearer <token>` header) can create 2 links per 24 hours per IP.
+*   **Success Response (201 Created, or 200 OK when an existing link is reused):**
     ```json
     {
       "shortId": "xYz1A8b",
@@ -167,6 +177,7 @@ cd URL-Shortener
     ```
 *   **Error Responses:**
     *   `400 Bad Request` – If `originalUrl` is missing or is an invalid URL format.
+    *   `403 Forbidden` – Guest limit reached (`code: "GUEST_LIMIT"`).
     *   `500 Internal Server Error` – General server errors.
 
 ### 2. Redirect to Original URL
@@ -175,7 +186,22 @@ cd URL-Shortener
 *   **Description:** Redirects the user to the corresponding `originalUrl` and increments the click counter by `1`.
 *   **Success Response (302 Found):** Redirects automatically to the destination URL.
 *   **Error Responses:**
-    *   `404 Not Found` – If the provided `shortId` does not exist.
+    *   If the `shortId` does not exist or has expired, redirects to the frontend's `/not-found` page.
+
+### 3. Other endpoints
+*   `GET /health` – Returns `200` when the server and database are up, `503` otherwise.
+*   `GET /api/urls/mine` – The logged-in user's links with click counts (requires login).
+*   `POST /api/auth/signup`, `/verify`, `/resend-otp`, `/login`, `/forgot-password`, `/reset-password`, and `GET /api/auth/me`.
+
+> Short links are deleted automatically 14 days after they are created.
+
+---
+
+## ☁️ Deploying on Render
+
+**Backend (Web Service):** set `MONGO_URL`, `JWT_SECRET`, `BASE_URL` (the backend's own URL), `FRONTEND_URL` (the frontend URL, no trailing slash) and the `SMTP_*` / `EMAIL_FROM` variables. The server exits with a clear log message if any required variable is missing or MongoDB can't be reached. In MongoDB Atlas → Network Access, allow `0.0.0.0/0` because Render's IPs change.
+
+**Frontend (Static Site):** set `VITE_BACKEND_URL` to the backend URL, then under *Redirects/Rewrites* add a rule: Source `/*`, Destination `/index.html`, Action `Rewrite`. Without it, refreshing any page other than `/` shows a 404.
 
 ---
 
