@@ -1,23 +1,77 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api, { errorMessage, rememberEmail } from '../api';
+import { Alert, Field, Spinner, SegGroup, SegField, SegPassword, SubmitButton } from '../components/ui';
+import AuthShell from '../components/AuthShell';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL?.trim();
+function ForgotPasswordDialog({ initialEmail, onClose }) {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState(initialEmail);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && !loading && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [loading, onClose]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post('/api/auth/forgot-password', { email });
+      rememberEmail(email);
+      setSuccess(`${res.data.message} Taking you to the next step…`);
+      setTimeout(() => navigate('/reset-password', { state: { email } }), 1800);
+    } catch (err) {
+      setError(errorMessage(err, 'Could not send the code. Please try again.'));
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="dialog-backdrop" onMouseDown={(e) => e.target === e.currentTarget && !loading && onClose()}>
+      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="forgot-title">
+        <h2 id="forgot-title">Reset your password</h2>
+        <p>We'll email you a 6-digit code to set a new password.</p>
+        <Alert tone="error">{error}</Alert>
+        <Alert tone="success">{success}</Alert>
+        <form onSubmit={handleSubmit} className="form">
+          <Field
+            id="forgot-email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoFocus
+          />
+          <div className="dialog-actions">
+            <button type="button" onClick={onClose} className="btn btn-secondary" disabled={loading}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={loading || !!success}>
+              {loading ? <><Spinner /> Sending</> : 'Send code'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotError, setForgotError] = useState('');
-  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user, login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -25,177 +79,60 @@ export default function Login() {
     setError('');
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, {
-        email,
-        password,
-      });
-
-      login(res.data.token, res.data.email);
+      const res = await api.post('/api/auth/login', { email, password });
+      login(res.data.token, res.data.email, res.data.name);
       navigate('/');
     } catch (err) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-        if (err.response.data.error.includes("verify")) {
-          setTimeout(() => navigate('/verify', { state: { email } }), 2000);
-        }
-      } else {
-        setError('Failed to login. Please try again.');
+      setError(errorMessage(err, 'Failed to log in. Please try again.'));
+      if (err.response?.data?.code === 'NOT_VERIFIED') {
+        rememberEmail(email);
+        setTimeout(() => navigate('/verify', { state: { email } }), 2000);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setForgotLoading(true);
-    setForgotError('');
-    setForgotSuccess('');
-
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email: forgotEmail });
-      setForgotSuccess(res.data.message);
-      setTimeout(() => {
-        setShowForgotModal(false);
-        navigate('/reset-password', { state: { email: forgotEmail } });
-      }, 2000);
-    } catch (err) {
-      if (err.response?.status === 404) {
-        setForgotError('Email not registered with us');
-      } else if (err.response?.data?.error) {
-        setForgotError(err.response.data.error);
-      } else {
-        setForgotError('Failed to process request.');
-      }
-    } finally {
-      setForgotLoading(false);
-    }
-  };
+  if (user) return <Navigate to="/" replace />;
 
   return (
     <>
-    <div className="card input-card" style={{ maxWidth: '400px', margin: '40px auto' }}>
-      <h2 className="auth-title">Welcome Back</h2>
-      <p className="auth-subtitle">Log in to manage your short links</p>
-
-      {error && (
-        <div className="error-banner" style={{ backgroundColor: "#fee2e2", color: "#991b1b", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px", border: "1px solid #f87171" }}>
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleLogin} className="auth-form">
-        <div>
-          <label className="input-label">Email Address</label>
-          <input 
-            type="email" 
-            className="url-input" 
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ paddingLeft: '16px' }}
-          />
-        </div>
-        <div>
-          <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Password</span>
-            <button 
-              type="button" 
-              onClick={() => setShowForgotModal(true)} 
-              style={{ background: 'none', border: 'none', color: 'var(--clr-primary)', cursor: 'pointer', fontSize: '12px' }}
-            >
-              Forgot password?
-            </button>
-          </label>
-          <div style={{ position: 'relative' }}>
-            <input 
-              type={showPassword ? "text" : "password"} 
-              className="url-input" 
-              placeholder="••••••••"
+      <AuthShell
+        eyebrow="Log in"
+        title="Welcome back."
+        subtitle="Pick up where you left off: your links and their click counts are waiting."
+        footer={<>New here? <Link to="/signup">Create an account</Link></>}
+      >
+        <Alert tone="error">{error}</Alert>
+        <form onSubmit={handleLogin} className="auth-form">
+          <SegGroup>
+            <SegField
+              id="login-email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <SegPassword
+              id="login-password"
+              autoComplete="current-password"
+              placeholder="Your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ paddingLeft: '16px', paddingRight: '40px' }}
             />
-            <button 
-              type="button" 
-              onMouseDown={() => setShowPassword(true)}
-              onMouseUp={() => setShowPassword(false)}
-              onMouseLeave={() => setShowPassword(false)}
-              onTouchStart={() => setShowPassword(true)}
-              onTouchEnd={() => setShowPassword(false)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--clr-text-muted)', cursor: 'pointer', padding: '0', display: 'flex' }}
-            >
-              {showPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              )}
-            </button>
+          </SegGroup>
+          <div className="auth-row">
+            <button type="button" className="btn-link" onClick={() => setShowForgot(true)}>Forgot password?</button>
           </div>
-        </div>
-        <button type="submit" className="shorten-btn" disabled={loading} style={{ justifyContent: 'center', marginTop: '8px' }}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      
-      <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: 'var(--clr-text-muted)' }}>
-        Don't have an account? <Link to="/signup" className="auth-link">Sign up</Link>
-      </p>
-    </div>
+          <SubmitButton loading={loading} loadingText="Logging in">Log in</SubmitButton>
+        </form>
+      </AuthShell>
 
-    {showForgotModal && (
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-        <div className="card input-card" style={{ maxWidth: '400px', width: '100%', margin: '20px' }}>
-          <h2 className="auth-title" style={{ fontSize: '1.5rem' }}>Forgot Password</h2>
-          <p className="auth-subtitle">Enter your registered email address</p>
-
-          {forgotError && (
-            <div className="error-banner" style={{ backgroundColor: "#fee2e2", color: "#991b1b", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px", border: "1px solid #f87171" }}>
-              {forgotError}
-            </div>
-          )}
-
-          {forgotSuccess && (
-            <div className="error-banner" style={{ backgroundColor: "var(--clr-success-bg)", color: "var(--clr-success)", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px", border: "1px solid rgba(52,211,153,0.3)" }}>
-              {forgotSuccess} Redirecting...
-            </div>
-          )}
-
-          <form onSubmit={handleForgotPassword} className="auth-form">
-            <div>
-              <label className="input-label">Email Address</label>
-              <input 
-                type="email" 
-                className="url-input" 
-                placeholder="you@example.com"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                required
-                style={{ paddingLeft: '16px' }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              {forgotError === 'Email not registered with us' ? (
-                <>
-                  <button type="button" onClick={() => navigate('/signup')} className="shorten-btn" style={{ flex: 1, justifyContent: 'center' }}>Sign Up</button>
-                  <button type="button" onClick={() => { setShowForgotModal(false); setForgotError(''); }} className="download-btn" style={{ flex: 1, justifyContent: 'center' }}>Close</button>
-                </>
-              ) : (
-                <>
-                  <button type="submit" className="shorten-btn" disabled={forgotLoading} style={{ flex: 1, justifyContent: 'center' }}>
-                    {forgotLoading ? 'Sending...' : 'Send OTP'}
-                  </button>
-                  <button type="button" onClick={() => setShowForgotModal(false)} className="download-btn" style={{ flex: 1, justifyContent: 'center' }} disabled={forgotLoading}>Cancel</button>
-                </>
-              )}
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
+      {showForgot && <ForgotPasswordDialog initialEmail={email} onClose={() => setShowForgot(false)} />}
     </>
   );
 }

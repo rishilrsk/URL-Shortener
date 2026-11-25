@@ -1,82 +1,80 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL?.trim();
+import { useNavigate, useLocation } from 'react-router-dom';
+import api, { errorMessage, recallEmail, rememberEmail } from '../api';
+import { Alert, Spinner, SegGroup, SegField, SegCode, SubmitButton } from '../components/ui';
+import AuthShell from '../components/AuthShell';
 
 export default function VerifyOTP() {
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email;
-
-  if (!email) {
-    return <Navigate to="/login" replace />;
-  }
+  // Fall back to the email saved during signup so a page refresh still works.
+  const [email, setEmail] = useState(location.state?.email || recallEmail());
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleVerify = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/verify`, {
-        email,
-        otp,
-      });
-
-      setSuccess(res.data.message);
-      setTimeout(() => navigate('/login'), 2000);
+      const res = await api.post('/api/auth/verify', { email, otp });
+      setSuccess(`${res.data.message} Taking you to log in…`);
+      sessionStorage.removeItem('pendingEmail');
+      setTimeout(() => navigate('/login'), 1800);
     } catch (err) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Failed to verify OTP. Please try again.');
-      }
+      setError(errorMessage(err, 'Failed to verify the code. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleResend = async () => {
+    if (!email) return setError('Please enter your email first.');
+    setResending(true);
+    setError('');
+    setSuccess('');
+    try {
+      rememberEmail(email);
+      const res = await api.post('/api/auth/resend-otp', { email, type: 'verification' });
+      setSuccess(res.data.message);
+    } catch (err) {
+      setError(errorMessage(err, 'Could not send a new code. Please try again.'));
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
-    <div className="card input-card" style={{ maxWidth: '400px', margin: '40px auto' }}>
-      <h2 className="auth-title">Verify Email</h2>
-      <p className="auth-subtitle">We sent a 6-digit code to <strong style={{color: '#f0f0f8'}}>{email}</strong></p>
-
-      {error && (
-        <div className="error-banner" style={{ backgroundColor: "#fee2e2", color: "#991b1b", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px", border: "1px solid #f87171" }}>
-          {error}
-        </div>
-      )}
-      
-      {success && (
-        <div className="error-banner" style={{ backgroundColor: "var(--clr-success-bg)", color: "var(--clr-success)", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px", border: "1px solid rgba(52,211,153,0.3)" }}>
-          {success} Redirecting to login...
-        </div>
-      )}
-
+    <AuthShell
+      eyebrow="Verify email"
+      title="Check your inbox."
+      subtitle="We sent you a 6-digit code. It expires after 4 minutes."
+    >
+      <Alert tone="error">{error}</Alert>
+      <Alert tone="success">{success}</Alert>
       <form onSubmit={handleVerify} className="auth-form">
-        <div>
-          <label className="input-label">Authentication Code</label>
-          <input 
-            type="text" 
-            className="url-input" 
-            placeholder="123456"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
+        <SegGroup>
+          <SegField
+            id="verify-email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
-            maxLength={6}
-            style={{ paddingLeft: '16px', letterSpacing: '8px', fontSize: '20px', textAlign: 'center' }}
           />
-        </div>
-        <button type="submit" className="shorten-btn" disabled={loading || otp.length !== 6} style={{ justifyContent: 'center', marginTop: '8px' }}>
-          {loading ? 'Verifying...' : 'Verify Code'}
+          <SegCode id="verify-code" value={otp} onChange={setOtp} />
+        </SegGroup>
+        <SubmitButton loading={loading} loadingText="Verifying" disabled={otp.length !== 6 || !email}>Verify email</SubmitButton>
+        <button type="button" onClick={handleResend} className="btn btn-ghost btn-block" disabled={resending}>
+          {resending ? <><Spinner /> Sending</> : 'Send a new code'}
         </button>
       </form>
-    </div>
+    </AuthShell>
   );
 }
