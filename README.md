@@ -15,7 +15,6 @@ A premium, modern, and lightning-fast **MERN Stack URL Shortener** application. 
 | Layer | Platform | URL |
 | :--- | :--- | :--- |
 | **Frontend UI** | Render | 🌐 [frontend-elb7.onrender.com](https://frontend-elb7.onrender.com) |
-| **Backend API** | Render | ⚙️ [backend-7kq8.onrender.com](https://backend-7kq8.onrender.com/health) |
 
 ---
 
@@ -226,9 +225,3 @@ To build the React application for production deployment:
 *   **Rishi**
     *   GitHub: [@rishilrsk](https://github.com/rishilrsk)
     *   LinkedIn: [rishisivakesh](https://www.linkedin.com/in/rishisivakesh/)
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
