@@ -11,7 +11,34 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
+
+// Render's free plan blocks outgoing SMTP ports, so when BREVO_API_KEY is set
+// we send through Brevo's HTTPS API instead, which always works there.
+const sendWithBrevoApi = async ({ to, subject, html }) => {
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": process.env.BREVO_API_KEY.trim(),
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({
+      sender: { name: "URL Shortener Auth", email: process.env.EMAIL_FROM },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) {
+    throw new Error(`Brevo API responded ${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+};
 
 export const sendOTP = async (email, otp, type = "verification") => {
   const isVerification = type === "verification";
@@ -57,8 +84,13 @@ export const sendOTP = async (email, otp, type = "verification") => {
   };
 
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: " + info.response);
+    if (process.env.BREVO_API_KEY?.trim()) {
+      await sendWithBrevoApi({ to: email, subject, html: mailOptions.html });
+      console.log("Email sent via Brevo API to", email);
+    } else {
+      const info = await transporter.sendMail(mailOptions);
+      console.log("Email sent: " + info.response);
+    }
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
